@@ -1,10 +1,25 @@
 /* jshint node: true */
-
+var jsFiles = [
+  'js/typeahead/version.js',
+  'js/typeahead/utils.js',
+  'js/typeahead/event_target.js',
+  'js/typeahead/event_bus.js',
+  'js/typeahead/persistent_storage.js',
+  'js/typeahead/request_cache.js',
+  'js/typeahead/transport.js',
+  'js/typeahead/dataset.js',
+  'js/typeahead/input_view.js',
+  'js/typeahead/dropdown_view.js',
+  'js/typeahead/typeahead_view.js',
+  'js/typeahead/typeahead.js'
+];
 module.exports = function(grunt) {
   "use strict";
 
   // Project configuration.
   grunt.initConfig({
+
+    buildDir: 'dist', 
 
     // Metadata.
     pkg: grunt.file.readJSON('package.json'),
@@ -30,10 +45,12 @@ module.exports = function(grunt) {
         src: 'Gruntfile.js'
       },
       src: {
-        src: ['js/*.js']
+        src: ['js/*.js'],
+        typeahead: ['js/typeahead/*.js']
       },
       test: {
-        src: ['js/tests/unit/*.js']
+        src: ['js/tests/unit/*.js'],
+        typeahead: ['js/tests/unit/typeahead/*.js']
       }
     },
 
@@ -58,16 +75,31 @@ module.exports = function(grunt) {
           'js/affix.js'
         ],
         dest: 'dist/js/<%= pkg.name %>.js'
+      },
+      typeahead: {
+        src: jsFiles,
+        dest: '<%= buildDir %>/js/typeahead.js'
       }
     },
 
     uglify: {
       options: {
-        banner: '<%= banner %>'
+        banner: '<%= banner %>',
+
+        // From typeahead Gruntfile
+        enclose: { 'window.jQuery': '$' }
       },
       bootstrap: {
         src: ['<%= concat.bootstrap.dest %>'],
         dest: 'dist/js/<%= pkg.name %>.min.js'
+      },
+      typeahead: {
+        options: {
+          mangle: true,
+          compress: true
+        },
+        src: jsFiles,
+        dest: '<%= buildDir %>/js/typeahead.min.js'
       }
     },
 
@@ -113,6 +145,23 @@ module.exports = function(grunt) {
       },
       files: ['js/tests/*.html']
     },
+
+    jasmine: {
+      js: {
+        src: jsFiles,
+        options: {
+          specs: 'js/tests/typeahead/*_spec.js',
+          helpers: 'js/tests/typeahead/helpers/*',
+          vendor: 'js/tests/typeahead/vendor/*'
+        }
+      }
+    },
+
+    exec: {
+      open_spec_runner: {
+        cmd: 'open _SpecRunner.html'
+      }
+    }, 
 
     connect: {
       server: {
@@ -160,6 +209,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-qunit');
+  grunt.loadNpmTasks('grunt-contrib-jasmine');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-html-validation');
@@ -171,7 +221,7 @@ module.exports = function(grunt) {
   grunt.registerTask('validate-html', ['jekyll', 'validation']);
 
   // Test task.
-  var testSubtasks = ['dist-css', 'jshint', 'qunit', 'validate-html'];
+  var testSubtasks = ['dist-css', 'jshint', 'qunit', 'jasmine', 'validate-html'];
   // Only run BrowserStack tests under Travis
   if (process.env.TRAVIS) {
     // Only run BrowserStack tests if this is a mainline commit in twbs/bootstrap, or you have your own BrowserStack key
